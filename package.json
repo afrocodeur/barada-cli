@@ -1,0 +1,37 @@
+{
+  "name": "barada",
+  "version": "1.0.0",
+  "description": "BARADA CLI",
+  "main": "barada.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Barada",
+    "CLI",
+    "Laravel"
+  ],
+  "bin": {
+    "barada": "./barada.js"
+  },
+  "author": "DIARRA Mamadou",
+  "license": "ISC",
+  "dependencies": {
+    "arg": "^4.1.2",
+    "axios": "^0.19.0",
+    "chalk": "^3.0.0",
+    "clear": "^0.1.0",
+    "clui": "^0.3.6",
+    "configstore": "^5.0.0",
+    "figlet": "^1.2.4",
+    "inquirer": "^7.0.0",
+    "lodash": "^4.17.15",
+    "meow": "^6.0.0",
+    "minimist": "^1.2.0",
+    "open": "^7.0.0",
+    "simple-git": "^1.128.0",
+    "touch": "^3.1.0",
+    "unzip": "^0.1.11",
+    "validatorjs": "^3.18.1"
+  }
+}
