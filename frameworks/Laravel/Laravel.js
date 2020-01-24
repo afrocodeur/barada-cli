@@ -181,7 +181,17 @@ module.exports = class Laravel extends Framework{
             return true;
         }
 
-        if(/^(\/app\/Http\|\/app\/Http\/\/Models)/.test(infos.relative) || /\.gitignore$/.test(infos.relative)) return false;
+        let regex = [
+            /^(\/app\/)/,
+            /^(\\app\\)/,
+            /\.gitignore$/
+        ];
+
+        for(let reg of regex){
+            if(reg.test(infos.relative))
+                return false;
+        }
+        // if(/^(\/app\/Http\|\/app\/Http\/\/Models)/.test(infos.relative) || /\.gitignore$/.test(infos.relative)) return false;
 
         let code = files.read(directpath, false), old = files.read(infos.to+infos.relative, false);
         if(code === old) return false;
