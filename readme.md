@@ -1,5 +1,7 @@
 # Barada CLI
 
+[![Build Status](https://travis-ci.org/afrocodeur/barada-cli.svg?branch=master)](https://travis-ci.org/afrocodeur/barada-cli)
+
 The Barada command line interface (CLI) is your go-to tool for developing and synchronise [Barada](https://barada.miridoo.com) apps.
 
 
