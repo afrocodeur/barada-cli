@@ -1,4 +1,6 @@
 # Barada CLI
+`Build : Preview` `Version : 1.0.1`
+
 
 The Barada command line interface (CLI) is your go-to tool for developing and synchronise [Barada](https://barada.miridoo.com) apps.
 
