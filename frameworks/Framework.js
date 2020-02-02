@@ -130,9 +130,17 @@ module.exports = class Framework {
     /**
      * use prompt to get some information
      * @param questions
+     * @param defaults
      * @returns {*}
      */
-    prompt(questions){ return inquirer.prompt(questions); }
+    async prompt(questions, defaults = {}){
+        var answers = await inquirer.prompt(questions);
+
+        for(var key in answers)
+            defaults[key] = answers[key];
+
+        return defaults;
+    }
 
     /**
      * get a cli ui manager

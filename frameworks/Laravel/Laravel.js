@@ -3,9 +3,17 @@ var chalk = require('chalk');
 
 const EnvConf = require('./prompt/Env')
 
+var assoc_env = {
+    "laravel-env-app_url": "APP_URL",
+    "laravel-env-api_url": "APP_API_URL",
+    "laravel-env-db_host": "DB_HOST",
+    "laravel-env-db_port": "DB_PORT",
+    "laravel-env-db_database": "DB_DATABASE",
+    "laravel-env-db_username":"DB_USERNAME",
+    "laravel-env-db_password":"DB_PASSWORD"
+};
 
 module.exports = class Laravel extends Framework{
-
 
     async init(){
         // const response = await this.prompt(exemple)
@@ -33,8 +41,8 @@ module.exports = class Laravel extends Framework{
         }
     }
 
-
-    create (resouce, options, files) {
+    create (resource, options, files) {
+        resource.env = this.toEnv(resource.params);
         return new Promise((resolve, reject) => {
             console.log(chalk.cyan('[INFO] Laravel Installation'));
             // check if composer is available
@@ -53,7 +61,7 @@ module.exports = class Laravel extends Framework{
 
                     options.cwd = files.cwd(subfolder+'/'+options.resource.folder);
 
-                    this.barada(resouce, options, files).then(resolve).catch(reject);
+                    this.barada(resource, options, files).then(resolve).catch(reject);
 
                 }).catch(error => load.stop());
 
@@ -61,7 +69,7 @@ module.exports = class Laravel extends Framework{
         });
     }
 
-    barada (resouce, options, files) {
+    barada (resource, options, files) {
         return new Promise((resolve, reject) => {
             let load = this.load('Update environment to import barada file');
 
@@ -80,7 +88,7 @@ module.exports = class Laravel extends Framework{
                 cwd : options.cwd
             }).then(async (stdout) => {
                 load.stop();
-                const answers = await this.prompt(EnvConf);
+                const answers = await this.prompt(EnvConf(resource.env), resource.env);
 
                 try{
                     // TODO : configure the .env file
@@ -100,14 +108,14 @@ module.exports = class Laravel extends Framework{
                         files.save(options.cwd+'/.env', env.join('\n'), false);
                     }
 
-                    const userfile = options.cwd+'/app/'+resouce.params['laravel-model-folder']+'/User.php',
+                    const userfile = options.cwd+'/app/'+resource.params['laravel-model-folder']+'/User.php',
                         routefile = options.cwd+'/routes/web.php',
                         apifile = options.cwd+'/routes/api.php',
                         authfile = options.cwd+'/config/auth.php';
 
                     // if Laravel model folder changed
-                    if(resouce.params['laravel-model-folder']){
-                        const modelfolder = options.cwd+'/app/'+resouce.params['laravel-model-folder'];
+                    if(resource.params['laravel-model-folder']){
+                        const modelfolder = options.cwd+'/app/'+resource.params['laravel-model-folder'];
                         // Create the Model folder
                         !files.fs.existsSync(modelfolder) && files.fs.mkdirSync(modelfolder);
 
@@ -115,7 +123,7 @@ module.exports = class Laravel extends Framework{
                         files.move(options.cwd+'/app/User.php', userfile).then(error => {
                             // update the configs/auth.php file
                             let auth = files.get(authfile, false)
-                                .replace(/'model' => App\\User::class,/, "'model' => App\\"+resouce.params['laravel-model-folder']+"\\User::class,");
+                                .replace(/'model' => App\\User::class,/, "'model' => App\\"+resource.params['laravel-model-folder']+"\\User::class,");
 
                             let user = files.get(userfile, false)
                                 .replace(/namespace App;/, "namespace App\\Models;");
@@ -140,7 +148,7 @@ module.exports = class Laravel extends Framework{
                         files.save(routefile, route, false);
                     }
 
-                    // if(['on', true, 'yes'].indexOf(resouce.params['laravel-api']) >= 0)
+                    // if(['on', true, 'yes'].indexOf(resource.params['laravel-api']) >= 0)
                     // API Routes From Barada
                     {
                         let comment = "/*\n" +
@@ -226,4 +234,10 @@ module.exports = class Laravel extends Framework{
         });
     }
 
+    toEnv(params) {
+        let env = {};
+        for(var key in params)
+            env[(assoc_env[key] || key)] = params[key];
+        return env;
+    }
 };

@@ -119,7 +119,7 @@ class Global extends Framework{
             if(projects.length){
                 const data = await this.prompt(SelectProject(projects, true));
 
-                if(data.project){
+                if(data.project && data.folder){
                     data.folder = data.folder.trim();
                     const configs = ConfigWriter(data);
                     const load =  this.load('Request export and download files');
@@ -177,6 +177,9 @@ class Global extends Framework{
                             install();
                         }
                     });
+                }
+                else {
+                    console.log(chalk.red('[ERROR]')+' please make sure you done well your project configuration.');
                 }
             }
             else{
