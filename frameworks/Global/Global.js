@@ -122,6 +122,8 @@ class Global extends Framework{
                 if(data.project && data.folder){
                     data.folder = data.folder.trim();
                     const configs = ConfigWriter(data);
+                    let save = () => files.save(data.folder+'/barada.json', JSON.stringify(configs, null, 4));
+
                     const load =  this.load('Request export and download files');
                     console.log('');
                     this.download(data).then((info) => {
@@ -133,6 +135,7 @@ class Global extends Framework{
                             let index = 0;
                             let install = () => {
                                 let resource = configs.resources[index];
+                                // console.log(resource)
                                 if(resource){
                                     const framework = this.framework(resource.name.toLowerCase());
 
@@ -141,11 +144,17 @@ class Global extends Framework{
                                         let loptions = {console: options, resource: {configs: configs, folder: cwd}};
 
                                         //Update the folder name in the config file
-                                        resource.folder = loptions.folder;
 
                                         //Create and install the resource
                                         let instance = (new framework);
                                         instance.create(resource, loptions, files).then((path) => {
+                                            resource.folder = loptions.resource.folder;
+                                            cwd = loptions.resource.folder;
+                                            loptions.cwd = data.folder+'/'+cwd;
+                                            resource.folder = cwd;
+
+                                            save();
+
                                             files.save(data.folder+'/'+cwd+'/barada.json', JSON.stringify({
                                                 type : 'resource',
                                                 id : resource.id,
@@ -155,7 +164,7 @@ class Global extends Framework{
                                             }, null, 4));
 
                                             console.log(chalk.cyan('[INFO] Installation of Barada files for '+resource.name+'!'));
-                                            instance.sync(info.path+'/'+cwd, loptions.cwd, files, false);
+                                            instance.sync(info.path+'/'+resource.name.toLowerCase(), data.folder+'/'+cwd, files, false);
                                             instance.afterCreate(resource, loptions, files).then((out) => {
                                                 console.log(out)
                                                 index++;
@@ -172,6 +181,8 @@ class Global extends Framework{
                                 }
                                 else{
                                     //TODO : we are done here
+                                    files.removeDir(info.path)
+                                    console.log(chalk.green('DONE !'));
                                 }
                             };
                             install();
@@ -205,8 +216,11 @@ class Global extends Framework{
                         let resource = barada.resources[index];
                         if (resource) {
                             const framework = this.framework(resource.name.toLowerCase());
-                            let instance = (new framework), cwd = resource.name.toLowerCase();
+                            let instance = (new framework), cwd = (resource.folder || resource.name).toLowerCase();
                             let option = {console: options, resource: {configs: barada, folder: cwd}, cwd: files.cwd(cwd)};
+
+                            console.log('');
+                            console.log(chalk.cyan('[INFO] React update'));
 
                             // update local config file
                             let BaradaLocal = files.get(cwd+'/barada.json');
@@ -215,7 +229,7 @@ class Global extends Framework{
 
                             let logs = [];
 
-                            instance.sync(data.path+'/'+cwd, files.cwd(cwd), files, true, logs);
+                            instance.sync(data.path+'/'+resource.name.toLowerCase(), files.cwd(cwd), files, true, logs);
 
                             if(logs.length > 0) {
                                 logs.forEach((state) => console.log(state));
@@ -238,6 +252,7 @@ class Global extends Framework{
                         }
                         else{
                             //TODO : we aree done here
+                            files.removeDir(data.path)
                         }
                     };
 

@@ -1,0 +1,17 @@
+[
+    {
+        "name": "English (US)",
+        "short": "en",
+        "code": "en_US"
+    },
+    {
+        "name": "Fran\u00e7ais (France)",
+        "short": "fr",
+        "code": "fr_FR"
+    },
+    {
+        "name": "Espa\u00f1ol",
+        "short": "es",
+        "code": "es_LA"
+    }
+]

@@ -16,6 +16,7 @@ module.exports = class Framework {
 
     constructor(){
         this.args = null;
+        this.filters = [];
     }
 
     /**
@@ -118,7 +119,6 @@ module.exports = class Framework {
      * @param all
      */
     sync(source, to, files, all = false){
-
     }
 
     /**
@@ -183,5 +183,58 @@ module.exports = class Framework {
     noCommand(command) {
         console.log(chalk.red("[ERROR]")+" Unable to find command: "+command+"\n");
         console.log("\tYou may need to be in an Barada project directory.");
+    }
+
+    /**
+     *
+     * @param directpath
+     * @param stat
+     * @param infos
+     * @param files
+     * @return {boolean}
+     */
+    copyFileFilter(directpath, stat, infos, files) {
+        if(stat.isDirectory()) return true;
+        if(!files.exists(infos.to+infos.relative, false)) {
+            if(infos.logs){
+                infos.logs.push(chalk.green('add '+infos.relative));
+            }
+            return true;
+        }
+        let regex = this.filters;
+
+        for(let reg of regex){
+            if(reg.test(infos.relative))
+                return false;
+        }
+
+        let code = files.read(directpath, false), old = files.read(infos.to+infos.relative, false);
+        if(code === old) return false;
+
+        if(infos.logs){
+            infos.logs.push(chalk.cyan('update '+infos.relative));
+        }
+
+        return true;
+    }
+
+    /**
+     *
+     * @return {{}}
+     */
+    envAssoc() {
+        return {}
+    }
+
+    /**
+     *
+     * @param params
+     */
+    env(params) {
+        let assoc_env = this.envAssoc()
+        let env = {};
+        for(var key in params)
+            env[(assoc_env[key] || key)] = params[key];
+        return env;
     }
 }
