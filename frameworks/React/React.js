@@ -13,8 +13,8 @@ module.exports = class React extends Framework{
     constructor() {
         super();
         this.filters = [
-            // /^(\/src\/app\/)/,
-            // /^(\/src\/routes\/AppRoutes.js)/,
+            /^(\/src\/app\/)/,
+            /^(\/src\/routes\/AppRoutes.js)/,
             /\.gitignore$/
         ];
     }

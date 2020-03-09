@@ -220,7 +220,7 @@ class Global extends Framework{
                             let option = {console: options, resource: {configs: barada, folder: cwd}, cwd: files.cwd(cwd)};
 
                             console.log('');
-                            console.log(chalk.cyan('[INFO] React update'));
+                            console.log(chalk.cyan('[INFO] '+resource.name+' update'));
 
                             // update local config file
                             let BaradaLocal = files.get(cwd+'/barada.json');
