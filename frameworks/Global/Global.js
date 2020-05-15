@@ -1,9 +1,11 @@
+const chalk = require('chalk');
+const moment = require('moment');
+
 const Framework = require('../Framework');
 
 const {global} = require('../../lib/helper');
 const {api} = require('../../lib/api');
 const {browser} = require('../../lib/url');
-const chalk = require('chalk');
 
 //Inquire elements
 const Login = require('./prompt/Login');
@@ -36,13 +38,17 @@ class Global extends Framework{
 
         const load = this.load('Authentication');
 
-        api.login(credentials).then((rsp) => {
-            load.stop();
-            console.log('');
-            if(rsp.check)
-                console.log(chalk.green('[success]')+' You are logged in!');
-            else
-                console.log(chalk.red('[error]')+' These credentials do not match our records.');
+        return new Promise((resolve, reject) => {
+            api.login(credentials).then((rsp) => {
+                load.stop();
+                console.log('');
+                if(rsp.check)
+                    console.log(chalk.green('[success]')+' You are logged in!');
+                else
+                    console.log(chalk.red('[error]')+' These credentials do not match our records.');
+
+                resolve(rsp);
+            }).catch(reject);
         });
 
     }
@@ -111,13 +117,44 @@ class Global extends Framework{
         }
     }
 
-    start(commands, options, files){
+    /**
+     *
+     * @param commands
+     * @param options
+     * @param files
+     * @return {Promise<void>}
+     */
+    async start(commands, options, files){
+        // console.log(options)
+
+        if(!api.logged()){
+            await this.login(commands, options, files);
+        }
+
+        if(!api.logged()) return;
+
         const load = this.load('');
 
         api.projects().then(async (projects) => {
             load.stop();
             if(projects.length){
-                const data = await this.prompt(SelectProject(projects, true));
+                let data = null;
+                if(options.project){
+                    for (let index in projects) {
+                        let project = projects[index];
+                        if((parseInt(project.id) === parseInt(options.project)) || (options.project === project.name)){
+                            data =  {project: project};
+                            break;
+                        }
+                    }
+                }
+                if(!data){
+                    data = await this.prompt(SelectProject(projects, true));
+                }
+                else{
+                    data.folder = options.folder || data.project.name.toLowerCase()
+                    data.resources = data.project.resources.filter(item => item.type === 'framework');
+                }
 
                 if(data.project && data.folder){
                     data.folder = data.folder.trim();
@@ -155,21 +192,19 @@ class Global extends Framework{
 
                                             save();
 
-                                            files.save(data.folder+'/'+cwd+'/barada.json', JSON.stringify({
-                                                type : 'resource',
-                                                id : resource.id,
-                                                project : data.project.id,
-                                                name : resource.name,
-                                                ref : info.activity.id
-                                            }, null, 4));
-
                                             console.log(chalk.cyan('[INFO] Installation of Barada files for '+resource.name+'!'));
                                             instance.sync(info.path+'/'+resource.name.toLowerCase(), data.folder+'/'+cwd, files, false);
+                                            let LocalBarada = {type : 'resource', id : resource.id, project : data.project.id, name : resource.name, ref : info.activity.id}
                                             instance.afterCreate(resource, loptions, files).then((out) => {
                                                 console.log(out)
                                                 index++;
+                                                LocalBarada.date = moment().format();
+                                                files.save(data.folder+'/'+cwd+'/barada.json', JSON.stringify(LocalBarada, null, 4));
                                                 install();
-                                            }).catch((err) => {});
+                                            }).catch((err) => {
+                                                LocalBarada.date = moment().format();
+                                                files.save(data.folder+'/'+cwd+'/barada.json', JSON.stringify(LocalBarada, null, 4));
+                                            });
                                         });
 
                                     }
@@ -203,6 +238,12 @@ class Global extends Framework{
         })
     }
 
+    /**
+     *
+     * @param commands
+     * @param options
+     * @param files
+     */
     pull (commands, options, files) {
         if(files.exists('barada.json')){
             let barada = files.get('barada.json');
@@ -223,13 +264,13 @@ class Global extends Framework{
                             console.log(chalk.cyan('[INFO] '+resource.name+' update'));
 
                             // update local config file
-                            let BaradaLocal = files.get(cwd+'/barada.json');
+                            let BaradaLocal = files.get(cwd+'/barada.json'), lastMoment = BaradaLocal.date ? moment(BaradaLocal.date) : null;
                             BaradaLocal.ref = data.activity.id;
-                            files.save(cwd+'/barada.json', JSON.stringify(BaradaLocal, null, 4));
-
+                            BaradaLocal.date = moment().format();
                             let logs = [];
 
-                            instance.sync(data.path+'/'+resource.name.toLowerCase(), files.cwd(cwd), files, true, logs);
+                            instance.sync(data.path+'/'+resource.name.toLowerCase(), files.cwd(cwd), files, true, logs, lastMoment);
+
 
                             if(logs.length > 0) {
                                 logs.forEach((state) => console.log(state));
@@ -237,22 +278,25 @@ class Global extends Framework{
                                 // TODO : check removed files
 
                                 instance.afterPull(resource, option, files).then((out) => {
-                                    console.log(out)
+                                    console.log(out);
                                     index++;
+                                    files.save(cwd+'/barada.json', JSON.stringify(BaradaLocal, null, 4));
                                     update();
                                 }).catch((error) => {
-                                    console.log(error)
+                                    console.log(error);
+                                    files.save(cwd+'/barada.json', JSON.stringify(BaradaLocal, null, 4));
                                 });
                             }
                             else {
                                 index++;
-                                update();
                                 console.log(chalk.cyan(resource.name)+' : Already up to date.')
+                                files.save(cwd+'/barada.json', JSON.stringify(BaradaLocal, null, 4));
+                                update();
                             }
                         }
                         else{
                             //TODO : we aree done here
-                            files.removeDir(data.path)
+                            files.removeDir(data.path);
                         }
                     };
 
@@ -265,6 +309,26 @@ class Global extends Framework{
         }
     }
 
+    async serve(commands, options, files) {
+        let barada = files.get('barada.json');
+        if(barada.resources){
+            barada.resources.forEach(resource => {
+                let framework = this.framework(resource.name.toLowerCase());
+                if(framework){
+                    framework = new framework();
+                    console.log(resource.name);
+                    resource.cwd = files.cwd(resource.folder);
+                    framework.serve(resource);
+                }
+            });
+        }
+    }
+
+    /**
+     *
+     * @param data
+     * @return {Promise<any>}
+     */
     download(data) {
         return new Promise((resolve, reject) => {
             // TODO use api to download file
@@ -276,13 +340,26 @@ class Global extends Framework{
         });
     }
 
+    /**
+     *
+     * @param commands
+     * @param options
+     * @param files
+     */
     test(commands, options, files){
         files.copy(process.cwd()+'/Compressed', process.cwd()+'/destination');
     }
 
+    /**
+     *
+     * @param source
+     * @param destination
+     * @param params
+     */
     sync(source, destination, params){
 
     }
+
 
     /**
      * check if the command is the global command

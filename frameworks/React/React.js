@@ -13,9 +13,12 @@ module.exports = class React extends Framework{
     constructor() {
         super();
         this.filters = [
-            /^(\/src\/app\/)/,
-            /^(\/src\/routes\/AppRoutes.js)/,
-            /\.gitignore$/
+            /^(\/src\/app)/,
+            /^(\/src\/app\/pages)/,
+            /^(\/src\/app\/layouts)/,
+            /^(\/src\/app\/[*]+\.css$)/,
+            // /^(\/src\/routes\/AppRoutes.js)/,
+            // /\.gitignore$/
         ];
     }
 
@@ -25,11 +28,10 @@ module.exports = class React extends Framework{
     }
 
     static inspector(files){
-        let file = files.get('package.json', true);
-
-        // if(file.name === "laravel/laravel"){
-        //     return true;
-        // }
+        if(files.exists('package.json', true)){
+            let file = files.get('package.json', true);
+            return true;
+        }
     }
 
     create (resource, options, files) {
@@ -63,7 +65,7 @@ module.exports = class React extends Framework{
         });
     }
 
-    sync(source, destination, files, filter = false, logs = null){
+    sync(source, destination, files, filter = false, logs = null, lastMoment = null){
         // remove default migrate files
         if(!filter){
 
@@ -71,7 +73,7 @@ module.exports = class React extends Framework{
 
 
         if(files.exists(source, false))
-            files.copy(source, destination, filter ? this.copyFileFilter.bind(this) : null, {source, to: destination, logs});
+            files.copy(source, destination, filter ? this.copyFileFilter.bind(this) : null, {source, to: destination, logs, lastMoment});
         else {
             console.log(chalk.yellow('[WARN]')+' No available resource');
         }
@@ -118,6 +120,14 @@ module.exports = class React extends Framework{
     afterPull(resource, loptions, files) {
         return new Promise((resolve, reject) => {
             resolve('');
+        });
+    }
+
+    serve(options) {
+        let yarn = this.spawn('yarn.cmd', ['start'], {cwd: options.cwd});
+        yarn.stdout.on('data', data => {
+            console.log(chalk.hex('#16a085').bold(('-->> React Js')));
+            console.log(data.toString());
         });
     }
 

@@ -5,7 +5,7 @@ const CLI = require('clui');
 // const Configstore = require('configstore');
 // const Octokit = require('@octokit/rest');
 
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const Spinner = CLI.Spinner;
 const Progress = CLI.Progress;
 
@@ -103,6 +103,7 @@ module.exports = class Framework {
                 if(error){
                     console.log('');
                     console.log(chalk.red('[Error]')+' ', stderr);
+                    console.log(chalk.red('[More details]')+' ', error);
                     reject ? reject(stderr) : null
                 }else{
                     resolve ? resolve(stdout) : null;
@@ -117,8 +118,10 @@ module.exports = class Framework {
      * @param to
      * @param files
      * @param all
+     * @param logs
+     * @param lastMoment
      */
-    sync(source, to, files, all = false){
+    sync(source, to, files, all = false, logs, lastMoment){
     }
 
     /**
@@ -193,7 +196,7 @@ module.exports = class Framework {
      * @param files
      * @return {boolean}
      */
-    copyFileFilter(directpath, stat, infos, files) {
+    copyFileFilter(directpath, stat, infos, files, lastMoment) {
         if(stat.isDirectory()) return true;
         if(!files.exists(infos.to+infos.relative, false)) {
             if(infos.logs){
@@ -204,8 +207,12 @@ module.exports = class Framework {
         let regex = this.filters;
 
         for(let reg of regex){
-            if(reg.test(infos.relative))
+            if(reg.test(infos.relative)) {
+                // if(lastMoment && lastMoment.isSameOrAfter(moment(infos.mtime))){
+                //     break;
+                // }
                 return false;
+            }
         }
 
         let code = files.read(directpath, false), old = files.read(infos.to+infos.relative, false);
@@ -236,5 +243,13 @@ module.exports = class Framework {
         for(var key in params)
             env[(assoc_env[key] || key)] = params[key];
         return env;
+    }
+
+    /**
+     * lunch the local server
+     * @param options
+     */
+    spawn(command, args, options) {
+        return spawn(command, args, options);
     }
 }

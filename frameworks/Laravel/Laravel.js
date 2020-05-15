@@ -88,101 +88,108 @@ module.exports = class Laravel extends Framework{
 
             const cmdOptions = { cwd : options.cwd };
 
-            this.exec('composer require fruitcake/laravel-cors', cmdOptions).then(() => {
-                this.exec('composer dump-autoload', cmdOptions).then(async (stdout) => {
-                    load.stop();
-                    const answers = await this.prompt(EnvConf(resource.env), resource.env);
+            this.exec('composer dump-autoload', cmdOptions).then(async (stdout) => {
+                load.stop();
+                let answers = {};
+                if(options.console.project){
+                    answers.config = 'yes';
+                    answers = resource.env;
+                }
+                else {
+                    answers = await this.prompt(EnvConf(resource.env), resource.env);
+                    if(answers.config === 'no'){
+                        answers = resource.env;
+                    }
+                }
 
-                    try{
-                        // TODO : configure the .env file
-                        if(answers.config === 'yes'){
-                            let env  = files.get(options.cwd+'/.env', false).split('\n').map((line) => {
-                                const kvalue = line.split('=');
-                                const lkey = kvalue[0].trim(); // get the line key
+                try{
+                    // TODO : configure the .env file
 
-                                for(let key in answers){
-                                    if(lkey === key){
-                                        kvalue[1] = answers[key];
-                                        break;
-                                    }
-                                }
-                                return kvalue.join('=');
-                            });
-                            files.save(options.cwd+'/.env', env.join('\n'), false);
+                    let env  = files.get(options.cwd+'/.env', false).split('\n').map((line) => {
+                        const kvalue = line.split('=');
+                        const lkey = kvalue[0].trim(); // get the line key
+
+                        for(let key in answers){
+                            if(lkey === key){
+                                kvalue[1] = answers[key];
+                                break;
+                            }
                         }
+                        return kvalue.join('=');
+                    });
+                    files.save(options.cwd+'/.env', env.join('\n'), false);
 
-                        const userfile = options.cwd+'/app/'+resource.params['laravel-model-folder']+'/User.php',
-                            routefile = options.cwd+'/routes/web.php',
-                            apifile = options.cwd+'/routes/api.php',
-                            authfile = options.cwd+'/config/auth.php';
+                    const userfile = options.cwd+'/app/'+resource.params['laravel-model-folder']+'/User.php',
+                        routefile = options.cwd+'/routes/web.php',
+                        apifile = options.cwd+'/routes/api.php',
+                        authfile = options.cwd+'/config/auth.php';
 
-                        // if Laravel model folder changed
-                        if(resource.params['laravel-model-folder']){
-                            const modelfolder = options.cwd+'/app/'+resource.params['laravel-model-folder'];
-                            // Create the Model folder
-                            !files.fs.existsSync(modelfolder) && files.fs.mkdirSync(modelfolder);
+                    // if Laravel model folder changed
+                    if(resource.params['laravel-model-folder']){
+                        const modelfolder = options.cwd+'/app/'+resource.params['laravel-model-folder'];
+                        // Create the Model folder
+                        !files.fs.existsSync(modelfolder) && files.fs.mkdirSync(modelfolder);
 
-                            // move the User.php file
-                            files.move(options.cwd+'/app/User.php', userfile).then(error => {
-                                // update the configs/auth.php file
-                                let auth = files.get(authfile, false)
-                                    .replace(/'model' => App\\User::class,/, "'model' => App\\"+resource.params['laravel-model-folder']+"\\User::class,");
+                        // move the User.php file
+                        files.move(options.cwd+'/app/User.php', userfile).then(error => {
+                            // update the configs/auth.php file
+                            let auth = files.get(authfile, false)
+                                .replace(/'model' => App\\User::class,/, "'model' => App\\"+resource.params['laravel-model-folder']+"\\User::class,");
 
-                                let user = files.get(userfile, false)
-                                    .replace(/namespace App;/, "namespace App\\Models;");
+                            let user = files.get(userfile, false)
+                                .replace(/namespace App;/, "namespace App\\Models;");
 
 
-                                files.save(authfile, auth, false);
+                            files.save(authfile, auth, false);
 
-                                files.save(userfile, user, false);
-                            });
-                        }
-                        // Web Routes From Barada
-                        {
-                            let comment = "/*\n" +
-                                "|--------------------------------------------------------------------------\n" +
-                                "| Web Routes From Barada\n" +
-                                "|--------------------------------------------------------------------------\n" +
-                                "*/";
+                            files.save(userfile, user, false);
+                        });
+                    }
+                    // Web Routes From Barada
+                    {
+                        let comment = "/*\n" +
+                            "|--------------------------------------------------------------------------\n" +
+                            "| Web Routes From Barada\n" +
+                            "|--------------------------------------------------------------------------\n" +
+                            "*/";
 
-                            let route = files.get(routefile, false)
-                                .replace(/<\?php/, "<?php\n\n"+comment+"\ninclude(__DIR__.'/barada.php');\n\n");
+                        let route = files.get(routefile, false)
+                            .replace(/<\?php/, "<?php\n\n"+comment+"\ninclude(__DIR__.'/barada.php');\n\n");
 
-                            files.save(routefile, route, false);
-                        }
-
-                        // if(['on', true, 'yes'].indexOf(resource.params['laravel-api']) >= 0)
-                        // API Routes From Barada
-                        {
-                            let comment = "/*\n" +
-                                "|--------------------------------------------------------------------------\n" +
-                                "| API Routes From Barada\n" +
-                                "|--------------------------------------------------------------------------\n" +
-                                "*/";
-                            let api = files.get(apifile, false)
-                                .replace(/<\?php/, "<?php\n\n"+comment+"\ninclude(__DIR__.'/api.barada.php');\n\n");
-
-                            files.save(apifile, api, false);
-                        }
-
-                        resolve();
-
-                        // TODO : check the export code from barada
-                    }catch(e){
-                        reject(e);
+                        files.save(routefile, route, false);
                     }
 
-                }).catch((stderr) => { load.stop() });
-            }).catch((stderr) => { load.stop() });;
+                    // if(['on', true, 'yes'].indexOf(resource.params['laravel-api']) >= 0)
+                    // API Routes From Barada
+                    {
+                        let comment = "/*\n" +
+                            "|--------------------------------------------------------------------------\n" +
+                            "| API Routes From Barada\n" +
+                            "|--------------------------------------------------------------------------\n" +
+                            "*/";
+                        let api = files.get(apifile, false)
+                            .replace(/<\?php/, "<?php\n\n"+comment+"\ninclude(__DIR__.'/api.barada.php');\n\n");
+
+                        files.save(apifile, api, false);
+                    }
+
+                    resolve();
+
+                    // TODO : check the export code from barada
+                }catch(e){
+                    reject(e);
+                }
+
+            }).catch((stderr) => { load.stop() });
 
         });
     }
 
-    sync(source, destination, files, filter = false, logs = null){
+    sync(source, destination, files, filter = false, logs = null, lastMoment = null){
         // remove default migrate files
         if(!filter){ files.removeDir(destination+'/database/migrations', true); }
 
-        files.copy(source, destination, filter ? this.copyFileFilter.bind(this) : null, {source, to: destination, logs});
+        files.copy(source, destination, filter ? this.copyFileFilter.bind(this) : null, {source, to: destination, logs, lastMoment});
     }
 
     envAssoc(){
@@ -217,6 +224,14 @@ module.exports = class Laravel extends Framework{
                 .then((out) => {
                     this.exec('php artisan migrate --seed', {cwd: loptions.cwd}).then(resolve).catch((error)=>{ console.log(error); });
                 }).catch((error)=>{ console.log(error); });
+        });
+    }
+
+    serve(options) {
+        let artisan = this.spawn('php', ['artisan', 'serve'], {cwd: options.cwd});
+        artisan.stdout.on('data', data => {
+            console.log(chalk.hex('#f1c40f').bold('-->> Laravel'));
+            console.log(data.toString());
         });
     }
 };
