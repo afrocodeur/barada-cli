@@ -12,7 +12,20 @@ module.exports = class React extends Framework{
 
     constructor() {
         super();
+        let ignores = [
+            '/src/app/lang/index.js',
+            '/src/app/lang/list.json'
+        ];
+
         this.filters = [
+            (info) => {
+                for(let item of ignores){
+                    if(typeof item === 'string' && item === info.relative){ return true;}
+                    if(item && typeof item.test === 'function' && item.test(info.relative)){return true;}
+                }
+
+                return false;
+            },
             /^(\/src\/app)/,
             /^(\/src\/app\/pages)/,
             /^(\/src\/app\/layouts)/,
@@ -37,6 +50,7 @@ module.exports = class React extends Framework{
     create (resource, options, files) {
         return new Promise((resolve, reject) => {
             options.resource.folder = 'react-js';
+            resource.params = resource.params || {};
             resource.params['react-state_manager'] = resource.params['react-state_manager'] || 'mobx';
 
             let manager = resource.params['react-package_manager'];
@@ -47,14 +61,14 @@ module.exports = class React extends Framework{
             //     console.log(chalk.cyan('[USE] Webpack'));
             //     install = WebPackInstaller.install.apply(this, [resource, options, files]);
             // }
-            if(resource.params['react-installer'] === 'cra'){
+            if(resource.params['react-installer'] === undefined || resource.params['react-installer'] === 'cra'){
                 console.log(chalk.cyan('[USE] Create React App'));
                 install = RACInstaller.install.apply(this, [resource, options, files]);
             }
 
             install.then(() => {
                 resolve();
-            });
+            }).catch(console.log);
 
         });
     }
@@ -101,7 +115,7 @@ module.exports = class React extends Framework{
                 store = 'mobx-react mobx';
             }
             console.log(chalk.cyan('[INFO] Add requirements'));
-            console.log(requirements)
+            console.log(requirements, options)
 
             this.exec('yarn add '+requirements, options).then(stdout => {
                 this.exec('yarn add '+(store), options).then(stdout => {

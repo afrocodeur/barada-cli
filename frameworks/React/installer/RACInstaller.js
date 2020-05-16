@@ -9,19 +9,15 @@ module.exports = (function RACInstaller(){
                 let cmd = {
                     install : 'npx create-react-app '+options.resource.folder
                 };
-                let subfolder = options.resource.configs.folder;
+                let subfolder = options.folder || '';
 
                 console.log(chalk.green(cmd.install));
 
                 this.exec(cmd.install, {
                     cwd: files.cwd(subfolder)
                 }).then(stdout => {
-
                     resolve(stdout);
-                }).catch(stderr => {
-                    console.log(stderr);
-                    // reject(stderr);
-                });
+                }).catch(stderr => { reject(stderr); });
             });
         }
     };

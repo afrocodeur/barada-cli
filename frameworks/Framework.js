@@ -11,6 +11,7 @@ const Progress = CLI.Progress;
 
 var chalk = require('chalk');
 
+const {api} = require('../lib/api');
 
 module.exports = class Framework {
 
@@ -26,6 +27,14 @@ module.exports = class Framework {
      */
     static inspector(files){
         return false;
+    }
+
+    async attenpt(){
+        if(!api.logged()){
+            await this.login(commands, options, files);
+        }
+
+        return api.logged();
     }
 
     /**
@@ -57,25 +66,32 @@ module.exports = class Framework {
 
     /**
      * install and deploy your project
-     * @param values
+     * @param commands
      * @param options
      */
-    install(values, options){}
+    install(commands, options){}
 
     /**
      * Push and update your online project with the local project
-     * @param values
+     * @param commands
      * @param options
      */
-    push(values, options){}
+    push(commands, options){}
 
     /**
      * Update your local project with the online project modification
-     * @param values
+     * @param commands
      * @param options
      */
-    pull(values, options){}
+    pull(commands, options){}
 
+    /**
+     * update the current project with online configuration
+     * @param commands
+     * @param options
+     */
+
+    update(commands, options){}
     /**
      * display the help of the specific command
      */
@@ -207,7 +223,17 @@ module.exports = class Framework {
         let regex = this.filters;
 
         for(let reg of regex){
-            if(reg.test(infos.relative)) {
+            if(typeof reg === 'function'){
+                if(reg.apply(this, [infos])){
+                    break;
+                }
+                continue;
+            }
+
+            if(typeof reg === 'string'){
+
+            }
+            else if(reg.test(infos.relative)) {
                 // if(lastMoment && lastMoment.isSameOrAfter(moment(infos.mtime))){
                 //     break;
                 // }

@@ -117,6 +117,77 @@ class Global extends Framework{
         }
     }
 
+    async installResources(folder, configs, options, files,  resources) {
+        let save = (config) => files.save(folder+'/barada.json', JSON.stringify(config, null, 4));
+
+        const load =  this.load('Request export and download files');
+        console.log('');
+        return new Promise((resolve, reject) => {
+            this.download(configs).then((info) => {
+                load.stop();
+                console.log('');
+                configs.ref = info.activity.id;
+                save(configs);
+                resources = resources || configs.resources;
+                if(configs && resources){
+                    let index = 0;
+                    let install = () => {
+                        let resource = resources[index];
+                        if(resource){
+                            this.installResource(folder, info, configs, resource, options, files).then(rsp => { save(configs); index++; install()}).catch(err => {console.log(err); index++; install();})
+                        }
+                        else{
+                            //TODO : we are done here
+                            files.removeDir(info.path)
+                            console.log(chalk.green('DONE !'));
+                            resolve({save})
+                        }
+                    };
+                    install();
+                }
+            });
+        })
+    }
+    async installResource(folder, info, configs, resource, options, files) {
+        return new Promise((resolve, reject) => {
+            const framework = this.framework(resource.name.toLowerCase());
+
+            if(framework){
+                let cwd = resource.name.toLowerCase();
+                let loptions = {console: options, resource: {configs: configs, folder: cwd}, folder: folder};
+
+                //Update the folder name in the config file
+
+                //Create and install the resource
+                let instance = (new framework);
+                instance.create(resource, loptions, files).then((path) => {
+                    resource.folder = loptions.resource.folder;
+                    cwd = loptions.resource.folder;
+                    loptions.cwd = (folder?folder+'/':'')+cwd;
+                    resource.folder = cwd;
+
+                    console.log(chalk.cyan('[INFO] Installation of Barada files for '+resource.name+'!'));
+                    instance.sync(info.path+'/'+resource.name.toLowerCase(), (folder?folder+'/':'')+cwd, files, false);
+                    let LocalBarada = {type : 'resource', id : resource.id, project : configs.project.id, name : resource.name, ref : info.activity.id}
+                    instance.afterCreate(resource, loptions, files).then((out) => {
+                        console.log(out)
+                        LocalBarada.date = moment().format();
+                        files.save(folder+'/'+cwd+'/barada.json', JSON.stringify(LocalBarada, null, 4));
+                        resolve();
+                    }).catch((err) => {
+                        LocalBarada.date = moment().format();
+                        files.save(folder+'/'+cwd+'/barada.json', JSON.stringify(LocalBarada, null, 4));
+                        reject('');
+                    });
+                });
+            }
+            else {
+                console.log(chalk.red('[Error]')+' '+resource.name+' manager is not available for the current cli.');
+                reject();
+            }
+        });
+    }
+
     /**
      *
      * @param commands
@@ -126,12 +197,7 @@ class Global extends Framework{
      */
     async start(commands, options, files){
         // console.log(options)
-
-        if(!api.logged()){
-            await this.login(commands, options, files);
-        }
-
-        if(!api.logged()) return;
+        if(!(await this.attenpt())) return;
 
         const load = this.load('');
 
@@ -159,70 +225,7 @@ class Global extends Framework{
                 if(data.project && data.folder){
                     data.folder = data.folder.trim();
                     const configs = ConfigWriter(data);
-                    let save = () => files.save(data.folder+'/barada.json', JSON.stringify(configs, null, 4));
-
-                    const load =  this.load('Request export and download files');
-                    console.log('');
-                    this.download(data).then((info) => {
-                        load.stop();
-                        console.log('');
-                        configs.ref = info.activity.id;
-                        files.save(data.folder+'/barada.json', JSON.stringify(configs, null, 4));
-                        if(configs && configs.resources){
-                            let index = 0;
-                            let install = () => {
-                                let resource = configs.resources[index];
-                                // console.log(resource)
-                                if(resource){
-                                    const framework = this.framework(resource.name.toLowerCase());
-
-                                    if(framework){
-                                        let cwd = resource.name.toLowerCase();
-                                        let loptions = {console: options, resource: {configs: configs, folder: cwd}};
-
-                                        //Update the folder name in the config file
-
-                                        //Create and install the resource
-                                        let instance = (new framework);
-                                        instance.create(resource, loptions, files).then((path) => {
-                                            resource.folder = loptions.resource.folder;
-                                            cwd = loptions.resource.folder;
-                                            loptions.cwd = data.folder+'/'+cwd;
-                                            resource.folder = cwd;
-
-                                            save();
-
-                                            console.log(chalk.cyan('[INFO] Installation of Barada files for '+resource.name+'!'));
-                                            instance.sync(info.path+'/'+resource.name.toLowerCase(), data.folder+'/'+cwd, files, false);
-                                            let LocalBarada = {type : 'resource', id : resource.id, project : data.project.id, name : resource.name, ref : info.activity.id}
-                                            instance.afterCreate(resource, loptions, files).then((out) => {
-                                                console.log(out)
-                                                index++;
-                                                LocalBarada.date = moment().format();
-                                                files.save(data.folder+'/'+cwd+'/barada.json', JSON.stringify(LocalBarada, null, 4));
-                                                install();
-                                            }).catch((err) => {
-                                                LocalBarada.date = moment().format();
-                                                files.save(data.folder+'/'+cwd+'/barada.json', JSON.stringify(LocalBarada, null, 4));
-                                            });
-                                        });
-
-                                    }
-                                    else {
-                                        console.log(chalk.red('[Error]')+' '+resource.name+' manager is not available for the current cli.');
-                                        index++;
-                                        install();
-                                    }
-                                }
-                                else{
-                                    //TODO : we are done here
-                                    files.removeDir(info.path)
-                                    console.log(chalk.green('DONE !'));
-                                }
-                            };
-                            install();
-                        }
-                    });
+                    this.installResources(configs.folder, configs, options, files).then(rsp => (rsp));
                 }
                 else {
                     console.log(chalk.red('[ERROR]')+' please make sure you done well your project configuration.');
@@ -307,6 +310,63 @@ class Global extends Framework{
         else {
             this.noCommand('pull');
         }
+    }
+
+    resourcesFormat(resources){
+        return resources.map(resource => {
+            let values = {};
+
+            try{
+                values = JSON.parse(resource.pivot.params);
+            }catch (e) { }
+
+            return {
+                id : resource.id,
+                name : resource.name,
+                params : values
+            };
+        });
+    }
+
+    async update(commands, options, files){
+        if(!(await this.attenpt())) return;
+        const load = this.load('check configuration');
+
+        if(files.exists('barada.json')) {
+            let baradaInit = files.get('barada.json');
+            let barada = files.get('barada.json');
+            let ids = [];
+            barada.resources.forEach(resource =>  ids.push(resource.id));
+
+            api.project(barada.project.id).then(project => {
+                let resources = [];
+                project.resources.forEach(resouce => {
+                    if(ids.indexOf(resouce.id) < 0){
+                        resources.push(resouce);
+                    }
+                });
+
+                load.stop();
+
+                if(resources.length){
+                    resources = this.resourcesFormat(resources);
+                    barada.resources = barada.resources.concat(resources);
+
+                    this.installResources('', barada, options, files, resources).then(rsp => {
+                        rsp.save(barada);
+                    }).catch(console.log);
+                }
+                else{
+                    console.log(chalk.cyan('[INFO] nothing to update'))
+                }
+            }).catch(error => console.log(error));
+
+
+        }
+        else {
+            this.noCommand('update');
+        }
+
     }
 
     async serve(commands, options, files) {
