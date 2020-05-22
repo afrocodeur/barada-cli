@@ -1,7 +1,7 @@
 {
   "name": "barada",
   "build": "preview",
-  "version": "1.0.80",
+  "version": "1.0.81",
   "description": "BARADA CLI",
   "main": "barada.js",
   "preferGlobal": true,

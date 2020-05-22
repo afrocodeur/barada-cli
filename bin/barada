@@ -1,5 +1,5 @@
+#!/usr/bin/env node
 
-// Provide a title to the process in `ps`
+/*Provide a title to the process in `ps`*/
 process.title = 'Barada';
-
-require('../barada.js');
+require(__dirname+'/../barada.js');
