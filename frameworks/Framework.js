@@ -29,7 +29,7 @@ module.exports = class Framework {
         return false;
     }
 
-    async attenpt(){
+    async attenpt(commands, options, files){
         if(!api.logged()){
             await this.login(commands, options, files);
         }

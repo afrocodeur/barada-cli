@@ -197,7 +197,7 @@ class Global extends Framework{
      */
     async start(commands, options, files){
         // console.log(options)
-        if(!(await this.attenpt())) return;
+        if(!(await this.attenpt(commands, options, files))) return;
 
         const load = this.load('');
 
@@ -329,7 +329,7 @@ class Global extends Framework{
     }
 
     async update(commands, options, files){
-        if(!(await this.attenpt())) return;
+        if(!(await this.attenpt(commands, options, files))) return;
         const load = this.load('check configuration');
 
         if(files.exists('barada.json')) {
