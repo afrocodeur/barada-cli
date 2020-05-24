@@ -211,7 +211,14 @@ module.exports = class Laravel extends Framework{
                 this.exec('composer dump-autoload', {cwd: loptions.cwd})
                 .then((out) => {
                     this.exec('php artisan migrate --seed', {cwd: loptions.cwd}).then(resolve).catch((error)=>{ console.log(error); });
-                }).catch((error)=>{ console.log(error); });
+                }).catch((error)=>{
+                    console.log(error);
+                    console.log("\n");
+                    console.log(chalk.cyan("1 - Check if you configured well the env data online"));
+                    console.log(chalk.cyan("2 - Make sure the database is already create in local database"));
+                    console.log(chalk.cyan("3 - Make sure the user have the correct grants"));
+                    console.log(chalk.cyan("4 - Make sure the user's password is correct"));
+                });
 
             }).catch(error => { console.log(error); });
         })
