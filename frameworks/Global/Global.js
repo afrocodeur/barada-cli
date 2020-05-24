@@ -48,7 +48,9 @@ class Global extends Framework{
                     console.log(chalk.red('[error]')+' These credentials do not match our records.');
 
                 resolve(rsp);
-            }).catch(reject);
+            }).catch(function (error) {
+                console.log(chalk.red('[error]')+' These credentials do not match our records.');
+            });
         });
 
     }
@@ -109,7 +111,8 @@ class Global extends Framework{
             })
             .catch(error => {
                 load.stop();
-                console.log(error);
+                console.log(chalk.red('[error]')+' You are not logged.')
+                // console.log(error);
             });
         }
         else{
