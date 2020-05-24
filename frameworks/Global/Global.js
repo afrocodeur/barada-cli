@@ -399,6 +399,8 @@ class Global extends Framework{
             api.build(data.project.id, null, progress).then((info) => {
                 progress.to(100);
                 resolve(info);
+            }).catch(error => {
+                console.log(chalk.red('[Error]')+' : Download error, please try later.');
             });
         });
     }

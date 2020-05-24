@@ -120,7 +120,7 @@ module.exports = class Framework {
                     console.log('');
                     console.log(chalk.red('[Error]')+' ', stderr);
                     console.log(chalk.red('[More details]')+' ', error);
-                    reject ? reject(stderr) : null
+                    reject ? reject(error) : null
                 }else{
                     resolve ? resolve(stdout) : null;
                 }
