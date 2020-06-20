@@ -254,7 +254,7 @@ class Global extends Framework{
         if(files.exists('barada.json')){
             let barada = files.get('barada.json');
 
-            api.pull(barada.project.id, barada.ref).then((data) => {
+            api.pull(barada.project.id, (!options.clean ? barada.ref : 0)).then((data) => {
                 barada.ref = data.activity.id;
                 files.save('barada.json', JSON.stringify(barada, null, 4));
                 if(barada.resources){
@@ -335,7 +335,7 @@ class Global extends Framework{
         if(!(await this.attenpt(commands, options, files))) return;
         const load = this.load('check configuration');
 
-        if(files.exists('barada.json')) {
+        if(files.exists('barada.json')){
             let baradaInit = files.get('barada.json');
             let barada = files.get('barada.json');
             let ids = [];
@@ -363,8 +363,6 @@ class Global extends Framework{
                     console.log(chalk.cyan('[INFO] nothing to update'))
                 }
             }).catch(error => console.log(error));
-
-
         }
         else {
             this.noCommand('update');

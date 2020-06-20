@@ -90,8 +90,8 @@ module.exports = class Framework {
      * @param commands
      * @param options
      */
-
     update(commands, options){}
+
     /**
      * display the help of the specific command
      */
@@ -120,6 +120,7 @@ module.exports = class Framework {
                     console.log('');
                     console.log(chalk.red('[Error]')+' ', stderr);
                     console.log(chalk.red('[More details]')+' ', error);
+                    console.log(chalk.red(stdout));
                     reject ? reject(error) : null
                 }else{
                     resolve ? resolve(stdout) : null;

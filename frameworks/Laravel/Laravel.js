@@ -100,6 +100,11 @@ module.exports = class Laravel extends Framework{
                     if(answers.config === 'no'){
                         answers = resource.env;
                     }
+                    else {
+                        for(let key in answers){
+                            resource.env[key] = answers[key];
+                        }
+                    }
                 }
 
                 try{
@@ -210,17 +215,23 @@ module.exports = class Laravel extends Framework{
 
                 this.exec('composer dump-autoload', {cwd: loptions.cwd})
                 .then((out) => {
-                    this.exec('php artisan migrate --seed', {cwd: loptions.cwd}).then(resolve).catch((error)=>{ console.log(error); });
+                    if(resource.env['DB_HOST'] && resource.env['DB_DATABASE'] && resource.env['DB_USERNAME'] ){
+                        this.exec('php artisan migrate --seed', {cwd: loptions.cwd}).then(resolve).catch((error)=>{ console.log(error); });
+                    }
+                    else {
+                        resolve(chalk.yellow('[WARN] Note that the database configuration is absent, so you have to do the migration manually'));
+                    }
                 }).catch((error)=>{
                     console.log(error);
-                    console.log("\n");
-                    console.log(chalk.cyan("1 - Check if you configured well the env data online"));
-                    console.log(chalk.cyan("2 - Make sure the database is already create in local database"));
-                    console.log(chalk.cyan("3 - Make sure the user have the correct grants"));
-                    console.log(chalk.cyan("4 - Make sure the user's password is correct"));
                 });
 
-            }).catch(error => { console.log(error); });
+            }).catch(error => {
+                console.log("\n");
+                console.log(chalk.cyan("1 - Check if you configured well the env data online"));
+                console.log(chalk.cyan("2 - Make sure the database is already create in local database"));
+                console.log(chalk.cyan("3 - Make sure the user have the correct grants"));
+                console.log(chalk.cyan("4 - Make sure the user's password is correct"));
+            });
         })
     }
 
