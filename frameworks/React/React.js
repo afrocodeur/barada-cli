@@ -14,6 +14,7 @@ module.exports = class React extends Framework{
         super();
         let ignores = [
             '/src/app/lang/index.js',
+            '/src/app/stores/index.js',
             '/src/app/lang/list.json'
         ];
 
