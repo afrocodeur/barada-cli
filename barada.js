@@ -6,8 +6,6 @@ const foo = require('.');
 
 require('dotenv').config({ path: __dirname+'/.env' });
 
-console.log(process.env)
-
 process.rootPath = __dirname;
 
 var inspector = require('./lib/inspector');
