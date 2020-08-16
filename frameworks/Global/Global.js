@@ -49,6 +49,7 @@ class Global extends Framework{
 
                 resolve(rsp);
             }).catch(function (error) {
+                load.stop();
                 console.log(chalk.red('[error]')+' These credentials do not match our records.');
             });
         });
