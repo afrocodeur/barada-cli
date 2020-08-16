@@ -200,9 +200,9 @@ module.exports = class Framework {
         return progress;
     }
 
-    noCommand(command) {
+    noCommand(command, may) {
         console.log(chalk.red("[ERROR]")+" Unable to find command: "+command+"\n");
-        console.log("\tYou may need to be in an Barada project directory.");
+        may !== false ? console.log("\tYou may need to be in an Barada project directory.") : null;
     }
 
     /**

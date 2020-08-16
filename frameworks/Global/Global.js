@@ -121,6 +121,15 @@ class Global extends Framework{
         }
     }
 
+    /**
+     *
+     * @param folder
+     * @param configs
+     * @param options
+     * @param files
+     * @param resources
+     * @return {Promise<*>}
+     */
     async installResources(folder, configs, options, files,  resources) {
         let save = (config) => files.save(folder+'/barada.json', JSON.stringify(config, null, 4));
 
@@ -152,6 +161,17 @@ class Global extends Framework{
             });
         })
     }
+
+    /**
+     *
+     * @param folder
+     * @param info
+     * @param configs
+     * @param resource
+     * @param options
+     * @param files
+     * @return {Promise<*>}
+     */
     async installResource(folder, info, configs, resource, options, files) {
         return new Promise((resolve, reject) => {
             const framework = this.framework(resource.name.toLowerCase());
@@ -245,6 +265,47 @@ class Global extends Framework{
         })
     }
 
+    async reset(commands, options, files){
+        if(files.exists('barada.json')) {
+            let barada = files.get('barada.json');
+            var currentId = barada.ref;
+            if(barada.resources){
+                barada.ref = 0;
+                let index = 0;
+                let reset = () => {
+                    let resource = barada.resources[index];
+                    index++;
+                    if (resource) {
+                        const framework = this.framework(resource.name.toLowerCase());
+                        let instance = (new framework),
+                            cwd = (resource.folder || resource.name).toLowerCase();
+
+                        if(instance.reset){
+                            instance.reset(files.cwd(cwd), files).then(() => {
+                                console.log(barada.resources);
+                                reset();
+                            }).catch(() => {
+                                reset();
+                            });
+                        }
+                        else{
+                            this.noCommand(chalk.blue("reset")+' for '+resource.name, false);
+                        }
+
+                    }
+                    else{
+                        files.save('barada.json', JSON.stringify(barada, null, 4));
+                        this.pull(commands, options, files);
+                    }
+                };
+
+                reset();
+            }
+        }
+        else{
+            this.noCommand('reset');
+        }
+    }
     /**
      *
      * @param commands
@@ -316,6 +377,11 @@ class Global extends Framework{
         }
     }
 
+    /**
+     *
+     * @param resources
+     * @return {*}
+     */
     resourcesFormat(resources){
         return resources.map(resource => {
             let values = {};
@@ -332,6 +398,13 @@ class Global extends Framework{
         });
     }
 
+    /**
+     *
+     * @param commands
+     * @param options
+     * @param files
+     * @return {Promise<void>}
+     */
     async update(commands, options, files){
         if(!(await this.attenpt(commands, options, files))) return;
         const load = this.load('check configuration');
@@ -371,6 +444,13 @@ class Global extends Framework{
 
     }
 
+    /**
+     *
+     * @param commands
+     * @param options
+     * @param files
+     * @return {Promise<void>}
+     */
     async serve(commands, options, files) {
         let barada = files.get('barada.json');
         if(barada.resources){

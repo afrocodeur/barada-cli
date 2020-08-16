@@ -68,6 +68,32 @@ module.exports = class Laravel extends Framework{
         });
     }
 
+    reset (cwd, files) {
+        return new Promise((reject, resolve) => {
+            try{
+                let ignore = (file, path, stat) => {
+                    return file !== '.gitignore';
+                };
+                console.log(chalk.blue('files removing in laravel project'));
+
+                // remove migrations
+                console.log('remove '+chalk.blue('database/migrations')+' folder');
+                files.removeDir(cwd+'/database/migrations', true, ignore);
+
+                // remove seedsrs
+                console.log('remove '+chalk.blue('database/seeds')+' folder');
+                files.removeDir(cwd+'/database/seeds', true, ignore);
+
+                // remove barada folder
+                console.log('remove '+chalk.blue('barada')+' folder');
+                files.removeDir(cwd+'/barada', false, ignore);
+
+                console.log(chalk.green('success'));
+                resolve();
+            }catch (e) { console.log(e);  reject(e); }
+        })
+    }
+
     barada (resource, options, files) {
         return new Promise((resolve, reject) => {
             let load = this.load('Update environment to import barada file');
