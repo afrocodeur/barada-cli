@@ -11,7 +11,14 @@ const Progress = CLI.Progress;
 
 var chalk = require('chalk');
 
+const Login = require('./Global/prompt/Login');
+const SelectProject = require('./SelectProject');
+const {ConfigWriter} = require('./ConfigStart');
 const {api} = require('../lib/api');
+const {browser} = require('../lib/url');
+const {global} = require('../lib/helper');
+
+const moment = require('moment');
 
 module.exports = class Framework {
 
@@ -95,7 +102,24 @@ module.exports = class Framework {
     /**
      * display the help of the specific command
      */
-    help(){}
+    help(){
+        return Object.assign({
+            init: {
+                desc: "Reinitialize an existing repository"
+            },
+            tag: {
+                desc: "List, delete or verify a tag object",
+                docs: {
+
+                },
+                beta: true
+            }
+        }, this.helper());
+    }
+
+    helper(){
+        return {};
+    }
 
 
     /**
@@ -160,6 +184,17 @@ module.exports = class Framework {
             defaults[key] = answers[key];
 
         return defaults;
+    }
+
+    async promptConfirm(message){
+        var answers = await inquirer.prompt([{
+            message : message,
+            name : 'confirm',
+            type : 'list',
+            choices : ['yes', 'no']
+        }]);
+
+        return answers.confirm;
     }
 
     /**
@@ -278,5 +313,186 @@ module.exports = class Framework {
      */
     spawn(command, args, options) {
         return spawn(command, args, options);
+    }
+    /**
+     *
+     * @param data
+     * @return {Promise<any>}
+     */
+    download(data) {
+        return new Promise((resolve, reject) => {
+            // TODO use api to download file
+            const progress = this.progress('Downloading : ', 10);
+            api.build(data.project.id, null, progress).then((info) => {
+                progress.to(100);
+                resolve(info);
+            }).catch(error => {
+                console.log(chalk.red('[Error]')+' : Download error, please try later.');
+            });
+        });
+    }
+
+    /**
+     *
+     * @param files
+     * @param file
+     * @param barada
+     */
+    saveConfig(files, file, barada) {
+        files.save(file, JSON.stringify(Object.assign( barada, {type: "resource", date: moment().format()}), null, 4));
+    }
+
+    resource(resources){
+        let r = resources[0];
+        if(!r){
+            console.log(chalk.red("[Error] : ")+"Resource is not found")
+        }
+        return r;
+    }
+
+    /**
+     * the user projects list
+     * @param commands
+     * @param options
+     * @param files
+     */
+    projects(commands, options, files){
+        return new Promise((resolve, reject) => {
+            if(api.logged()){
+                const load =  this.load('Load project list');
+                api.projects().then(projects => {
+                    load.stop();
+                    resolve(projects);
+                }).catch(error => {
+                        load.stop();
+                        console.log(chalk.red('[error]')+' You are not logged.')
+                        reject ? reject(error) : null ;
+                    });
+            }
+            else{
+                console.log(chalk.red('[error]')+' You are not logged.')
+            }
+        });
+    }
+    selectProject(commands, options, files, custom){
+        const load = this.load('');
+
+        return new Promise((resolve, reject) => {
+            api.projects().then(async (projects) => {
+                load.stop();
+                if(projects.length){
+                    let data = null;
+                    if(options.project){
+                        for (let index in projects) {
+                            let project = projects[index];
+                            if((parseInt(project.id) === parseInt(options.project)) || (options.project === project.name)){
+                                data =  {project: project};
+                                break;
+                            }
+                        }
+                    }
+                    if(!data){
+                        data = await this.prompt(SelectProject(projects, custom));
+                    }
+                    else{
+                        data.folder = options.folder || data.project.name.toLowerCase()
+                        data.resources = data.project.resources.filter(item => item.type === 'framework');
+                    }
+
+                    if(data.project && (((!custom || !custom.framework) && data.folder) || (custom.framework && !data.folder))){
+                        data.folder = (data.folder || '').trim();
+                        const configs = ConfigWriter(data);
+                        resolve({data, configs});
+                    }
+                    else {
+                        console.log(chalk.red('[ERROR]')+' please make sure you done well your project configuration.');
+                    }
+                }
+                else{
+                    console.log(chalk.cyan('[INFO] please create and configure project before'))
+                }
+            }).catch((error) => { load.stop(); console.log(error) });
+        })
+    }
+
+    logged(callback){
+        if(api.logged()){
+            callback.apply(this, []);
+        }
+        else{
+            console.log(chalk.red('[error]')+' You are not logged.')
+        }
+    }
+
+    /**
+     * Log in to barada
+     * @param commands
+     * @param options
+     * @param files
+     * @returns {Promise<void>}
+     */
+    async login(commands, options, files) {
+        const user = api.user();
+
+        if(!user || !user.token){
+            console.log(chalk.cyan('[INFO]')+' Log into your Barada account!');
+            console.log('\n\tIf you don\'t have one yet, create yours by running: '+chalk.cyan('barada signup')+'\n');
+        }
+        else {
+            console.log(chalk.yellow('[WARN]')+' You will be logged out.');
+            console.log('\n\tYou are already logged in as '+chalk.yellow(user.email)+'! Prompting for new credentials.\n');
+            console.log('\tUse '+chalk.yellow('Ctrl+C')+' to cancel and remain logged in.\n')
+        }
+
+        let credentials = await this.prompt(Login);
+
+        const load = this.load('Authentication');
+
+        return new Promise((resolve, reject) => {
+            api.login(credentials).then((rsp) => {
+                load.stop();
+                console.log('');
+                if(rsp.check)
+                    console.log(chalk.green('[success]')+' You are logged in!');
+                else
+                    console.log(chalk.red('[error]')+' These credentials do not match our records.');
+
+                resolve(rsp);
+            }).catch(function (error) {
+                load.stop();
+                console.log(chalk.red('[error]')+' These credentials do not match our records.');
+            });
+        });
+
+    }
+
+    /**
+     * log out of barada
+     * @param commands
+     * @param options
+     * @param files
+     */
+    logout(commands, options, files){
+        const load = this.load('Log out of Barada');
+        api.logout().then((data) => {
+            load.stop();
+            console.log(chalk.green('[ok]')+' You are logged out.');
+        }).catch(error => {
+            load.stop();
+            if(error.response.status === 401)
+                console.log(chalk.red('[error]')+' You are already logged out.')
+        });
+    }
+
+    /**
+     * Open miridoo sign up link with the default browser
+     * @param commands
+     * @param options
+     * @param files
+     * @returns {Global}
+     */
+    signup(commands, options, files){
+        browser.signup();
+        return this;
     }
 }
