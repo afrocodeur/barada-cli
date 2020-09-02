@@ -10,6 +10,7 @@ module.exports = class Laravel extends Framework{
         this.filters = [
             /^(\/app\/)/,
             /^(\\app\\)/,
+            /^(\\database\\seeds\\)/,
             /\.gitignore$/
         ];
     }
@@ -313,6 +314,7 @@ module.exports = class Laravel extends Framework{
                 }).catch((error)=>{ console.log(error); });
         });
     }
+
 
     serve(options) {
         let artisan = this.spawn('php', ['artisan', 'serve'], {cwd: options.cwd});

@@ -136,6 +136,7 @@ class Global extends Framework{
     async reset(commands, options, files, isResource){
         if(files.exists('barada.json')) {
             let barada = files.get('barada.json');
+
             if(isResource){
                 barada.ref = 0;
                 let resource = this.toResource(barada);
@@ -390,7 +391,14 @@ class Global extends Framework{
      * @param files
      */
     test(commands, options, files){
-        files.copy(process.cwd()+'/Compressed', process.cwd()+'/destination');
+        let barada = files.get('barada.json');
+        this.execUserScripts("reset", "after", barada, {
+            options: {cwd: files.cwd('')},
+            env: this.getDotEnv(files.cwd(''))
+        }).then(out => {
+            console.log('commande testé');
+        })
+        // files.copy(process.cwd()+'/Compressed', process.cwd()+'/destination');
     }
 
     /**

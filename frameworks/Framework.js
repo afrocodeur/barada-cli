@@ -9,6 +9,8 @@ const { exec, spawn } = require('child_process');
 const Spinner = CLI.Spinner;
 const Progress = CLI.Progress;
 
+const FileHelper = require('../lib/files');
+
 var chalk = require('chalk');
 
 const Login = require('./Global/prompt/Login');
@@ -143,7 +145,7 @@ module.exports = class Framework {
                 if(error){
                     console.log('');
                     console.log(chalk.red('[Error]')+' ', stderr);
-                    console.log(chalk.red('[More details]')+' ', error);
+                    // console.log(chalk.red('[More details]')+' ', error);
                     console.log(chalk.red(stdout));
                     reject ? reject(error) : null
                 }else{
@@ -494,5 +496,66 @@ module.exports = class Framework {
     signup(commands, options, files){
         browser.signup();
         return this;
+    }
+
+
+    /**
+     *
+     * @param on
+     * @param when
+     * @param config
+     * @param params
+     * @return {Promise<any>}
+     */
+    execUserScripts(on, when, config, params) {
+        return new Promise((resolve, reject) => {
+            try{
+                if(config.scripts && config.scripts[on] && config.scripts[on][when]){
+                    let scripts = config.scripts[on][when];
+                    if(typeof scripts === 'string') {
+                        scripts = [scripts];
+                    }
+                    if(scripts.length){
+                        let index = -1;
+                        let execute = () => {
+                            index++;
+                            let cmd = scripts[index];
+                            if(cmd){
+                                if(params.env){
+                                    for (let key in params.env){
+                                        cmd = cmd.replace(new RegExp('{'+key+'}'), params.env[key]);
+                                    }
+                                }
+                                console.log(chalk.green(cmd));
+                                this.exec(cmd, params.options).then(out => {
+                                    console.log(out);
+                                    execute();
+                                }).catch(error => {
+                                    // console.log(error);
+                                    resolve();
+                                });
+                            }
+                            else resolve();
+                        };
+                        execute();
+                    }
+                    else resolve();
+                }
+                else{
+                    resolve();
+                }
+            }catch (e) { reject(e); }
+        });
+    }
+
+    getDotEnv(cwd) {
+        let env = {};
+        if(FileHelper.exists(cwd+'/.env', false)){
+            let files = FileHelper.get(cwd+'/.env', false);
+            files.split('\n').map(item => item.trim().split('=')).forEach(item => {
+                if(item.length === 2) env[item[0].trim()] = item[1].trim();
+            });
+        }
+        return env;
     }
 }
