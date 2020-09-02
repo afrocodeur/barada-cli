@@ -15,7 +15,7 @@ function resources(project){
 }
 
 
-module.exports = function(projects, create = false){
+module.exports = function(projects, check){
 
     let lists = {
         projects : []
@@ -39,7 +39,19 @@ module.exports = function(projects, create = false){
             name : 'resources',
             message : 'Select the resources of the project',
             type : 'checkbox',
-            when : (answers) => (answers.project && answers.project.id > 0 && answers.project.resources.length),
+            when : (answers) => {
+                if(check && check.framework){
+                    let rs = resources(answers.project);
+                    for(let index in rs) {
+                        if(rs[index].name.toLowerCase() === check.framework.toLowerCase()) {
+                            answers.resources = [];
+                            answers.resources.push(rs[index].value);
+                            return false;
+                        }
+                    }
+                }
+                return answers.project && answers.project.id > 0 && answers.project.resources.length;
+            },
             choices : function(answers){
                 return resources(answers.project)
             }
@@ -49,7 +61,7 @@ module.exports = function(projects, create = false){
             type : 'input',
             message : 'The name of folder',
             default : (answers) => (answers.project.name.toLowerCase()),
-            when : (answers) => (create && answers.project && answers.project.id > 0 && answers.project.resources.length),
+            when : (answers) => (check.create && answers.project && answers.project.id > 0 && answers.project.resources.length),
         }
     ]
 };

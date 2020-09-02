@@ -5,6 +5,6 @@ const React = require('./React/React');
 
 module.exports = {
     global : Global,
+    laravel : Laravel,
     react : React,
-    laravel : Laravel
 };

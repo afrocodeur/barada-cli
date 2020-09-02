@@ -10,13 +10,42 @@ module.exports = class Laravel extends Framework{
         this.filters = [
             /^(\/app\/)/,
             /^(\\app\\)/,
+            /^(\\database\\seeds\\)/,
             /\.gitignore$/
         ];
     }
 
-    async init(){
-        // const response = await this.prompt(exemple)
-        // console.log(response)
+    async init(commands, options, files){
+        await this.logged(() => {
+            options.ignoreSelectedFolder = true;
+            this.selectProject(commands, options, files, {create: false, framework: 'Laravel'}).then((project) => {
+                const configs = project.configs; const resource = this.resource(configs.resources);
+                if(resource){
+                    this.download(configs).then(info => {
+                        let loptions = {cwd: files.cwd(''), console: options};
+                        this.saveConfig(files, './barada.json', {id: resource.id, project: configs.project.id, name: "Laravel", ref: info.activity.id});
+
+                        resource.folder = files.cwd('');
+                        resource.env = this.env(resource.params);
+                        resource.env.asking = true;
+
+                        this.sync(info.path+'/'+resource.name.toLowerCase(), loptions.cwd, files, true);
+                        this.barada(resource, loptions, files).then(data => {
+                            // info.path+'/'+resource.name.toLowerCase(), (folder?folder+'/':'')+cwd, files, false
+                            //
+                            this.afterCreate(resource, loptions, files).then(out => {
+                                files.removeDir(info.path);
+                            }).catch(error => { console.log(error); });
+
+                        }).catch(error => { console.log(error) });
+                    });
+                }
+            }).catch(error => {
+
+            });
+            // const response = await this.prompt(exemple)
+            // console.log(response)
+        });
     }
 
     static inspector(files){
@@ -68,6 +97,32 @@ module.exports = class Laravel extends Framework{
         });
     }
 
+    reset (cwd, files) {
+        return new Promise((reject, resolve) => {
+            try{
+                let ignore = (file, path, stat) => {
+                    return file !== '.gitignore';
+                };
+                console.log(chalk.blue('files removing in laravel project'));
+
+                // remove migrations
+                console.log('remove '+chalk.blue('database/migrations/barada')+' folder');
+                files.removeDir(cwd+'/database/migrations/barada', true, ignore);
+
+                // remove seedsrs
+                // console.log('remove '+chalk.blue('barada/Seeders')+' folder');
+                // files.removeDir(cwd+'/barada/Seeders', true, ignore);
+
+                // remove barada folder
+                console.log('remove '+chalk.blue('barada')+' folder');
+                files.removeDir(cwd+'/barada', false, ignore);
+
+                console.log(chalk.green('success'));
+                resolve();
+            }catch (e) { console.log(e);  reject(e); }
+        })
+    }
+
     barada (resource, options, files) {
         return new Promise((resolve, reject) => {
             let load = this.load('Update environment to import barada file');
@@ -95,7 +150,8 @@ module.exports = class Laravel extends Framework{
                     answers.config = 'yes';
                     answers = resource.env;
                 }
-                else {
+
+                if(!resource.env || !resource.env.DB_USERNAME || resource.env.asking === true){
                     answers = await this.prompt(EnvConf(resource.env), resource.env);
                     if(answers.config === 'no'){
                         answers = resource.env;
@@ -109,7 +165,6 @@ module.exports = class Laravel extends Framework{
 
                 try{
                     // TODO : configure the .env file
-
                     let env  = files.get(options.cwd+'/.env', false).split('\n').map((line) => {
                         const kvalue = line.split('=');
                         const lkey = kvalue[0].trim(); // get the line key
@@ -140,14 +195,15 @@ module.exports = class Laravel extends Framework{
                             // update the configs/auth.php file
                             let auth = files.get(authfile, false)
                                 .replace(/'model' => App\\User::class,/, "'model' => App\\"+resource.params['laravel-model-folder']+"\\User::class,");
-
-                            let user = files.get(userfile, false)
-                                .replace(/namespace App;/, "namespace App\\Models;");
-
-
                             files.save(authfile, auth, false);
 
-                            files.save(userfile, user, false);
+                            if(files.exists(userfile, false)){
+                                let user = files.get(userfile, false)
+                                    .replace(/namespace App;/, "namespace App\\Models;");
+                                files.save(userfile, user, false);
+                            }
+
+
                         });
                     }
                     // Web Routes From Barada
@@ -185,14 +241,14 @@ module.exports = class Laravel extends Framework{
                     reject(e);
                 }
 
-            }).catch((stderr) => { load.stop() });
+            }).catch((stderr) => { load.stop(); console.log(stderr) });
 
         });
     }
 
     sync(source, destination, files, filter = false, logs = null, lastMoment = null){
         // remove default migrate files
-        if(!filter){ files.removeDir(destination+'/database/migrations', true); }
+        if(!filter){ files.removeDir(destination+'/database/migrations/barada', true); }
 
         files.copy(source, destination, filter ? this.copyFileFilter.bind(this) : null, {source, to: destination, logs, lastMoment});
     }
@@ -216,23 +272,37 @@ module.exports = class Laravel extends Framework{
                 this.exec('composer dump-autoload', {cwd: loptions.cwd})
                 .then((out) => {
                     if(resource.env['DB_HOST'] && resource.env['DB_DATABASE'] && resource.env['DB_USERNAME'] ){
-                        this.exec('php artisan migrate --seed', {cwd: loptions.cwd}).then(resolve).catch((error)=>{ console.log(error); });
+                        this.seeder(loptions.cwd, resolve);
                     }
                     else {
                         resolve(chalk.yellow('[WARN] Note that the database configuration is absent, so you have to do the migration manually'));
+                        this.checkDatabaseTips();
                     }
                 }).catch((error)=>{
                     console.log(error);
                 });
 
             }).catch(error => {
-                console.log("\n");
-                console.log(chalk.cyan("1 - Check if you configured well the env data online"));
-                console.log(chalk.cyan("2 - Make sure the database is already create in local database"));
-                console.log(chalk.cyan("3 - Make sure the user have the correct grants"));
-                console.log(chalk.cyan("4 - Make sure the user's password is correct"));
+                this.checkDatabaseTips();
             });
         })
+    }
+
+    checkDatabaseTips() {
+        console.log("\n");
+        console.log(chalk.cyan("1 - Check if you configured well the env data online"));
+        console.log(chalk.cyan("2 - Make sure the database is already create in local database"));
+        console.log(chalk.cyan("3 - Make sure the user have the correct grants"));
+        console.log(chalk.cyan("4 - Make sure the user's password is correct"));
+    }
+
+    async seeder(cwd, resolve) {
+        let response = await this.promptConfirm('migrate and seed');
+        if(response === 'yes') {
+            return this.exec('php artisan migrate --seed --path=database/migrations/barada', {cwd: cwd})
+                    .then(resolve).catch((error)=>{ console.log(error); });
+        }
+        resolve('');
     }
 
     afterPull(resource, loptions, files) {
@@ -240,10 +310,11 @@ module.exports = class Laravel extends Framework{
 
             this.exec('composer dump-autoload', {cwd: loptions.cwd})
                 .then((out) => {
-                    this.exec('php artisan migrate --seed', {cwd: loptions.cwd}).then(resolve).catch((error)=>{ console.log(error); });
+                    this.seeder(loptions.cwd, resolve);
                 }).catch((error)=>{ console.log(error); });
         });
     }
+
 
     serve(options) {
         let artisan = this.spawn('php', ['artisan', 'serve'], {cwd: options.cwd});
@@ -251,5 +322,13 @@ module.exports = class Laravel extends Framework{
             console.log(chalk.hex('#f1c40f').bold('-->> Laravel'));
             console.log(data.toString());
         });
+    }
+    /**
+     *
+     */
+    helper() {
+        return {
+
+        };
     }
 };

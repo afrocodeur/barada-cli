@@ -17,33 +17,29 @@ var ConfigWriter = function(config){
     // if (fs.existsSync(folder+'/barada.json')){
     //     configs = require(folder+'/barada.json');
     // }
+    configs.project = {
+        name : config.project.name,
+        id : config.project.id
+    };
+    configs.resources = [];
 
+    var resources = [];
+
+    for (let resource of config.resources) {
+        let values = {};
+
+        try{
+            values = JSON.parse(resource.pivot.params);
+        }catch (e) { }
+
+        configs.resources.push({id : resource.id, name : resource.name, params : values});
+        resources.push({id : resource.id, name : resource.name, params : values})
+    }
 
     // if it's start command
     if (!fs.existsSync(folder)){
         // create the common directory
         fs.mkdirSync(folder);
-
-        //build the configuration file
-        configs.project = {
-            name : config.project.name,
-            id : config.project.id
-        };
-        configs.resources = [];
-
-        for (let resource of config.resources) {
-            let values = {};
-
-            try{
-                values = JSON.parse(resource.pivot.params);
-            }catch (e) { }
-
-            configs.resources.push({
-                id : resource.id,
-                name : resource.name,
-                params : values
-            });
-        }
 
         // create the config file
         fs.writeFileSync(folder+'/barada.json', JSON.stringify(configs, null, 4), 'utf8');
@@ -51,10 +47,12 @@ var ConfigWriter = function(config){
         return configs;
     }
     else {
-        console.log(chalk.red('[error]')+' the folder '+chalk.yellow(config.folder)+' already exists');
+        if(config.folder) {
+            console.log(chalk.red('[error]')+' the folder '+chalk.yellow(config.folder)+' already exists');
+        }
     }
 
-    return null;
+    return configs;
 
 };
 
