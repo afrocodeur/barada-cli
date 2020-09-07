@@ -18,7 +18,7 @@ module.exports = class Laravel extends Framework{
     async init(commands, options, files){
         await this.logged(() => {
             options.ignoreSelectedFolder = true;
-            this.selectProject(commands, options, files, {create: false, framework: 'Laravel'}).then((project) => {
+            this.selectProject(commands, options, files, {create: false, init: true, framework: 'Laravel'}).then((project) => {
                 const configs = project.configs; const resource = this.resource(configs.resources);
                 if(resource){
                     this.download(configs).then(info => {

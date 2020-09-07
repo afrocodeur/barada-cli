@@ -401,7 +401,9 @@ module.exports = class Framework {
                         data.resources = data.project.resources.filter(item => item.type === 'framework');
                     }
 
-                    if(data.project && (((!custom || !custom.framework) && data.folder) || (custom.framework && !data.folder))){
+                    data.folder = (custom.init) ? '' : data.folder;
+
+                    if(data.project && (custom.create || ((!custom || !custom.framework) && data.folder) || (custom.framework && !data.folder))){
                         data.folder = (data.folder || '').trim();
                         const configs = ConfigWriter(data);
                         resolve({data, configs});
@@ -409,6 +411,7 @@ module.exports = class Framework {
                     else {
                         console.log(chalk.red('[ERROR]')+' please make sure you done well your project configuration.');
                     }
+
                 }
                 else{
                     console.log(chalk.cyan('[INFO] please create and configure project before'))
