@@ -296,6 +296,23 @@ module.exports = class Laravel extends Framework{
         console.log(chalk.cyan("4 - Make sure the user's password is correct"));
     }
 
+    async migrate(commands, options, files) {
+        let cmd = 'php artisan ';
+
+        if(options.refresh){ cmd += ' migrate:refresh'; }
+        else{ cmd += ' migrate'; }
+
+        if(options.seed){ cmd += ' --seed'; }
+
+        if(options.path){ cmd += ' --path='+options.path; }
+        else { cmd += ' --path=database/migrations/barada'; }
+
+        console.log(chalk.green(cmd));
+
+        return this.exec(cmd)
+            .then(output => (console.log(output))).catch((error)=>{ console.log(error); });
+    }
+
     async seeder(cwd, resolve) {
         let response = await this.promptConfirm('migrate and seed');
         if(response === 'yes') {
@@ -328,7 +345,21 @@ module.exports = class Laravel extends Framework{
      */
     helper() {
         return {
+            'migrate': {
+                desc: 'run php artisan migrate  for all migrations created by barada',
+                check: true,
+                options: {
+                    '--refresh': Boolean,
+                    '--seed': Boolean
+                },
+                defaults: {
 
+                },
+                docs: {
+                    '--refresh': 'refresh all migration created by barada',
+                    '--ssed': 'run seeder'
+                }
+            }
         };
     }
 };
