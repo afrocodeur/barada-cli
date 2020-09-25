@@ -290,7 +290,7 @@ module.exports = class Framework {
     }
 
     /**
-     *
+     * @deprecated
      * @return {{}}
      */
     envAssoc() {

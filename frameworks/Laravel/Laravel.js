@@ -70,12 +70,14 @@ module.exports = class Laravel extends Framework{
     }
 
     create (resource, options, files) {
-        resource.env = this.env(resource.params);
+        resource.env = resource.params.env || this.env(resource.params);
+        const version = (/[0-9]+\./g.test(resource.params.version)) ? '"'+resource.params.version+'"' : '';
+
         return new Promise((resolve, reject) => {
             console.log(chalk.cyan('[INFO] Laravel Installation'));
             // check if composer is available
             this.exec('composer').then(stdout => {
-                const command = 'composer create-project --prefer-dist laravel/laravel '+options.resource.folder;
+                const command = 'composer create-project laravel/laravel '+version+' --prefer-dist '+options.resource.folder;
                 let load =  this.load(chalk.green(command));
                 const subfolder = options.resource.configs.folder;
 
@@ -253,6 +255,10 @@ module.exports = class Laravel extends Framework{
         files.copy(source, destination, filter ? this.copyFileFilter.bind(this) : null, {source, to: destination, logs, lastMoment});
     }
 
+    /**
+     * @deprecated
+     * @return {{"laravel-env-db_host": string, "laravel-env-db_database": string, "laravel-env-db_password": string, "laravel-env-db_port": string, "laravel-env-db_username": string, "laravel-env-api_url": string, "laravel-env-app_url": string}}
+     */
     envAssoc(){
         return {
             "laravel-env-app_url": "APP_URL",
