@@ -11,5 +11,4 @@ process.rootPath = __dirname;
 var inspector = require('./lib/inspector');
 
 // clear();
-
 var framework = inspector.check();

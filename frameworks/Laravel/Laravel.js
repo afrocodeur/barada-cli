@@ -11,6 +11,7 @@ module.exports = class Laravel extends Framework{
             /^(\/app\/)/,
             /^(\\app\\)/,
             /^(\\database\\seeds\\)/,
+            /^(\\database\\seeders\\)/,
             /\.gitignore$/
         ];
     }
@@ -70,6 +71,7 @@ module.exports = class Laravel extends Framework{
     }
 
     create (resource, options, files) {
+        resource.params = resource.params || {};
         resource.env = resource.params.env || this.env(resource.params);
         const version = (/[0-9]+\./g.test(resource.params.version)) ? '"'+resource.params.version+'"' : '';
 
@@ -77,7 +79,7 @@ module.exports = class Laravel extends Framework{
             console.log(chalk.cyan('[INFO] Laravel Installation'));
             // check if composer is available
             this.exec('composer').then(stdout => {
-                const command = 'composer create-project laravel/laravel '+version+' --prefer-dist '+options.resource.folder;
+                const command = 'composer create-project laravel/laravel --prefer-dist '+options.resource.folder+' '+version;
                 let load =  this.load(chalk.green(command));
                 const subfolder = options.resource.configs.folder;
 

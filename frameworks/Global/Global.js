@@ -136,6 +136,7 @@ class Global extends Framework{
     async reset(commands, options, files, isResource){
         if(files.exists('barada.json')) {
             let barada = files.get('barada.json');
+            options.reset = true;
 
             if(isResource){
                 barada.ref = 0;
@@ -213,8 +214,14 @@ class Global extends Framework{
     pull (commands, options, files, isResource) {
         if(files.exists('barada.json')){
             let barada = files.get('barada.json');
+            let data = {};
 
-            api.pull((isResource ? barada.project : barada.project.id), (!options.clean ? barada.ref : 0)).then((data) => {
+            if (options.tag) {
+                data.reset = options.reset;
+                data.tag = true;
+            }
+
+            api.pull((isResource ? barada.project : barada.project.id), (!options.clean ? barada.ref : 0), null, null, data).then((data) => {
                 barada.ref = data.activity.id;
                 files.save('barada.json', JSON.stringify(barada, null, 4));
                 if(isResource){
@@ -265,7 +272,7 @@ class Global extends Framework{
             console.log(chalk.cyan('[INFO] '+resource.name+' update'));
 
             // update local config file
-            let BaradaLocal = files.get(cwd+'/barada.json'), lastMoment = BaradaLocal.date ? moment(BaradaLocal.date) : null;
+            let BaradaLocal = files.exists(cwd+'/barada.json') ? files.get(cwd+'/barada.json') : {}, lastMoment = BaradaLocal.date ? moment(BaradaLocal.date) : null;
             BaradaLocal.ref = data.activity.id;
             BaradaLocal.date = moment().format();
             let logs = [];

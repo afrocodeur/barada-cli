@@ -7,7 +7,7 @@ module.exports = function(env){
             message : chalk.yellow('Database : ')+'Do you to configure the '+chalk.yellow('.env')+' file\nselect '+chalk.yellow('no')+' to use online configuration',
             name : 'config',
             type : 'list',
-            choices : ['yes', 'no']
+            choices : ['yes', 'no'],
         },
         {
             name : 'DB_HOST',
