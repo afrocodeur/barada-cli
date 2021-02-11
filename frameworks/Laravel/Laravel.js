@@ -11,6 +11,8 @@ module.exports = class Laravel extends Framework{
             /^(\/app\/)/,
             /^(\\app\\)/,
             /^(\\database\\seeds\\)/,
+            /^(\/database\/seeds\/)/,
+            /^(\/database\/seeders\/)/,
             /^(\\database\\seeders\\)/,
             /\.gitignore$/
         ];
@@ -275,7 +277,7 @@ module.exports = class Laravel extends Framework{
 
     afterCreate(resource, loptions, files) {
         return new Promise((resolve, reject) => {
-            this.exec('composer require doctrine/dbal', {cwd: loptions.cwd}).then((out) => {
+            this.exec('composer require doctrine/dbal barada/laravel', {cwd: loptions.cwd}).then((out) => {
 
                 this.exec('composer dump-autoload', {cwd: loptions.cwd})
                 .then((out) => {
