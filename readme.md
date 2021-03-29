@@ -19,7 +19,7 @@ Detailed installation instructions can be found in the [CLI documentation](https
 The Barada CLI ships with command documentation, accessible in your terminal by using the `--help` flag. These docs are also available [online](https://barada.miridoo.com/docs/cli/installation).
 
 * For a list of commands:
-
+``
 ```
 barada
 barada --help

@@ -1,5 +1,14 @@
-node_modules
-bower_components
+
+# Intellij IDEA/WebStorm
 .idea/
-.idea/
+
+# Local env config
+bin/lbarada
+bin/lbarada.cmd
 .env
+
+#Misc
+yarn-error.log*
+tmp/
+node_modules/
+npm-debug.log*
