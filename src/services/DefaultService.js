@@ -41,13 +41,6 @@ class DefaultService {
         });
 
         DefaultService.Axios.interceptors.response.use(async function (response) {
-            if(response.status === 401) {
-                Console.error('[Error] You are not logged in!');
-                Console.info('[Use] barada login');
-                DefaultService.cleanStorage();
-                process.exit();
-                return null;
-            }
             if(response.headers && response.headers.cli_current_version) {
                 if(parseInt(response.headers.cli_current_version.replace(/\./g, '')) > RootPackage.BUILD_VERSION) {
                     Console.warning("A new version of the barada cli is available.", {background: 'yellow', rgb: [255, 255, 255]});
@@ -55,6 +48,15 @@ class DefaultService {
                 }
             }
             return response;
+        }, async function (error) {
+            if(error.response && error.response.status === 401) {
+                Console.error('[Error] You are not logged in!');
+                Console.info('[Use] barada login');
+                DefaultService.cleanStorage();
+                process.exit();
+                return null;
+            }
+            return Promise.reject(error);
         });
 
         return this;
