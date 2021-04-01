@@ -1,10 +1,8 @@
-const Configstore = require('configstore');
 const DefaultService = require("./DefaultService");
 const Console = require("../commands/Console");
 
 
 class AuthService extends DefaultService{
-    static STORAGE = new Configstore('barada-cli', {token : null});
 
     static user() {
         return AuthService.STORAGE.get('user');

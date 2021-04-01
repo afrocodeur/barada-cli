@@ -1,11 +1,13 @@
 const Axios = require("axios");
-const AuthService = require("./AuthService");
 const Console = require("../commands/Console");
+const RootPackage = require("../utils/RootPackage");
 const File = require("../utils/File");
 const Unziper = require('unzipper');
+const Configstore = require('configstore');
 const Fs = require("fs");
 
 class DefaultService {
+    static STORAGE = new Configstore('barada-cli', {token : null});
 
     static BASE_URL = 'https://barada.miridoo.com/api/';
     static BARADA_URL = 'https://barada.miridoo.com/';
@@ -16,7 +18,12 @@ class DefaultService {
 
 
     static token(token) {
-        DefaultService.Axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        DefaultService.Axios.defaults.headers.common['Authorization'] = token ? `Bearer ${token}` : '';
+    }
+
+    static cleanStorage() {
+        DefaultService.token(null);
+        DefaultService.STORAGE.clear();
     }
 
     static env(env) {
@@ -31,6 +38,23 @@ class DefaultService {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Access-Control-Allow-Origin': '*'
             }
+        });
+
+        DefaultService.Axios.interceptors.response.use(async function (response) {
+            if(response.status === 401) {
+                Console.error('[Error] You are not logged in!');
+                Console.info('[Use] barada login');
+                DefaultService.cleanStorage();
+                process.exit();
+                return null;
+            }
+            if(response.headers && response.headers.cli_current_version) {
+                if(parseInt(response.headers.cli_current_version.replace(/\./g, '')) > RootPackage.BUILD_VERSION) {
+                    Console.warning("A new version of the barada cli is available.", {background: 'yellow', rgb: [255, 255, 255]});
+                    Console.warning("[Use] npm install -g barada");
+                }
+            }
+            return response;
         });
 
         return this;
