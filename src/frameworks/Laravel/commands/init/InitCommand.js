@@ -12,7 +12,7 @@ class InitCommand extends Command{
     Framework = LaravelFramework;
 
     async handler() {
-        let projects = await ProjectService.all(this²);
+        let projects = await ProjectService.all(this);
         let selector = new ProjectPrompt(projects);
 
         let project = this.option('project'), resource = null;

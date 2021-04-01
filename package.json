@@ -3,7 +3,7 @@
   "author": "DIARRA Mamadou",
   "license": "ISC",
   "description": "BARADA CLI",
-  "version": "1.0.96",
+  "version": "1.0.97",
   "main": "barada.js",
   "preferGlobal": true,
   "scripts": {
