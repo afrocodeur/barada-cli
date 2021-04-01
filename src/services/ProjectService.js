@@ -6,13 +6,15 @@ const LoginCommand = require("../frameworks/Barada/login/LoginCommand") ;
 
 class ProjectService extends DefaultService {
 
-    static async all() {
+    static async all(command) {
         try {
             if(!AuthService.check()) {
                 await (new LoginCommand()).handler();
             }
             if(AuthService.check()) {
+                let load = command ? command.load('') : null;
                 let {data: projects} = await DefaultService.Axios.post('projects');
+                load ? load.stop() : null;
                 if(projects && projects.length) {
                     for (let project of projects) {
                         project.resources.forEach(resource => {

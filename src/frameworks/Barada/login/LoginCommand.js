@@ -12,7 +12,7 @@ class LoginCommand extends Command{
     async handler() {
         const user = AuthService.user();
 
-        if(AuthService.guest()){
+        if(!user){
             Console.write(('{blue.bold: [INFO]}')+' Log into your Barada account!');
             Console.write('\tIf you don\'t have one yet, create yours by running: {green.bold: barada signup}\n');
         }
@@ -40,6 +40,7 @@ class LoginCommand extends Command{
             }
             catch (e) {
                 load.stop();
+                console.log(e.message);
                 Console.error('[error] These credentials do not match our records.');
             }
         }

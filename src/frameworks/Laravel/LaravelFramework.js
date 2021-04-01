@@ -28,7 +28,7 @@ class LaravelFramework extends Framework{
             e.message ? Console.error(e.message) : null;
         }
     }
-
+""
     async init(resource, data) {
         Console.info('-- Start laravel requirement installation');
 

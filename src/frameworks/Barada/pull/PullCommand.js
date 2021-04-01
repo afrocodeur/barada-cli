@@ -5,7 +5,7 @@ const Command = require('../../../commands/Command');
 class PullCommand extends Command{
     static SIGNATURE = 'pull';
     static DESCRIPTION = 'Update the existing project from online existing projects';
-    static GLOBAL_HELP_IGNORE = true;
+    static GLOBAL_HELP_IGNORE = false;
 
     async handler() {
         console.log('Global pull checking');

@@ -11,7 +11,7 @@ class AuthService extends DefaultService{
     }
 
     static guest() {
-        return AuthService.user() === null;
+        return AuthService.user() === null || AuthService.user() === undefined;
     }
 
     static verify() {

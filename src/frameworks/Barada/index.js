@@ -18,8 +18,8 @@ module.exports = [
     LoginCommand,
     LogoutCommand,
     StartCommand,
-    PullCommand,
-    UpdateCommand,
-    ServeCommand,
-    ResetCommand
+    // PullCommand,
+    // UpdateCommand,
+    // ServeCommand,
+    // ResetCommand
 ]

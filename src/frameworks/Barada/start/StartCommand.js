@@ -11,10 +11,8 @@ class StartCommand extends Command{
     static DESCRIPTION = 'Start new project from online existing projects';
 
     async handler() {
-        let load = this.load('');
         try {
-            let projects = await ProjectService.all();
-            load.stop();
+            let projects = await ProjectService.all(this);
             if(projects) {
                 let project = this.preselected(projects, this.option('project')), data = null;
                 if(!project) {
